@@ -1,0 +1,174 @@
+project_name: k8s-wait-for-multi
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    goamd64: 
+      - v2
+    ignore:
+      - goos: windows
+        goarch: arm
+upx:
+  - enabled: true
+universal_binaries:
+- replace: true
+dockers:
+  # - use: buildx
+  #   goos: windows
+  #   goarch: amd64
+  #   goamd64: v2
+  #   dockerfile: goreleaser-ltsc2019.Dockerfile
+  #   image_templates:
+  #   - "erayan/{{ .ProjectName }}:latest-ltsc2019"
+  #   - "erayan/{{ .ProjectName }}:{{ .Tag }}-ltsc2019"
+  #   build_flag_templates:
+  #     - "--platform=windows/amd64"
+  #     - "--label=org.opencontainers.image.created={{.Date}}"
+  #     - "--label=org.opencontainers.image.title={{.ProjectName}}"
+  #     - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  #     - "--label=org.opencontainers.image.version={{.Version}}"
+  # - use: buildx
+  #   goos: windows
+  #   goarch: amd64
+  #   goamd64: v2
+  #   dockerfile: goreleaser-ltsc2022.Dockerfile
+  #   image_templates:
+  #   - "erayan/{{ .ProjectName }}:latest-ltsc2022"
+  #   - "erayan/{{ .ProjectName }}:{{ .Tag }}-ltsc2022"
+  #   build_flag_templates:
+  #     - "--platform=windows/amd64"
+  #     - "--label=org.opencontainers.image.created={{.Date}}"
+  #     - "--label=org.opencontainers.image.title={{.ProjectName}}"
+  #     - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+  #     - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    goamd64: v2
+    dockerfile: goreleaser.Dockerfile
+    image_templates:
+    - "erayan/{{ .ProjectName }}:latest-amd64"
+    - "erayan/{{ .ProjectName }}:{{ .Tag }}-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    dockerfile: goreleaser.Dockerfile
+    image_templates:
+    - "erayan/{{ .ProjectName }}:latest-arm64v8"
+    - "erayan/{{ .ProjectName }}:{{ .Tag }}-arm64v8"
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: arm
+    goarm: 7
+    dockerfile: goreleaser.Dockerfile
+    image_templates:
+    - "erayan/{{ .ProjectName }}:latest-armv7"
+    - "erayan/{{ .ProjectName }}:{{ .Tag }}-armv7"
+    build_flag_templates:
+      - "--platform=linux/arm/v7"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"  
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    goamd64: v2
+    dockerfile: goreleaser-nonroot.Dockerfile
+    image_templates:
+    - "erayan/{{ .ProjectName }}:nonroot-amd64"
+    - "erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    dockerfile: goreleaser-nonroot.Dockerfile
+    image_templates:
+    - "erayan/{{ .ProjectName }}:nonroot-arm64v8"
+    - "erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot-arm64v8"
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: arm
+    goarm: 7
+    dockerfile: goreleaser-nonroot.Dockerfile
+    image_templates:
+    - "erayan/{{ .ProjectName }}:nonroot-armv7"
+    - "erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot-armv7"
+    build_flag_templates:
+      - "--platform=linux/arm/v7"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"  
+docker_manifests:
+  - name_template: erayan/{{ .ProjectName }}:{{ .Tag }}
+    image_templates:
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-amd64
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-arm64v8
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-armv7
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-ltsc2019
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-ltsc2022
+  - name_template: erayan/{{ .ProjectName }}:latest
+    image_templates:
+      - erayan/{{ .ProjectName }}:latest-amd64
+      - erayan/{{ .ProjectName }}:latest-arm64v8
+      - erayan/{{ .ProjectName }}:latest-armv7
+      - erayan/{{ .ProjectName }}:latest-ltsc2019
+      - erayan/{{ .ProjectName }}:latest-ltsc2022
+  - name_template: erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot
+    image_templates:
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot-amd64
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot-arm64v8
+      - erayan/{{ .ProjectName }}:{{ .Tag }}-nonroot-armv7
+  - name_template: erayan/{{ .ProjectName }}:nonroot
+    image_templates:
+      - erayan/{{ .ProjectName }}:nonroot-amd64
+      - erayan/{{ .ProjectName }}:nonroot-arm64v8
+      - erayan/{{ .ProjectName }}:nonroot-armv7
+archives:
+  - name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}{{ if .Arm}}v{{ .Arm }}{{ end }}'
+    format_overrides:
+      - goos: windows
+        format: zip
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'

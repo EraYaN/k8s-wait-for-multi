@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: model3
+  namespace: default
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5000
+      targetPort: http
+    - name: metrics
+      protocol: TCP
+      port: 9090
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/component: service
+    app.kubernetes.io/instance: model
+    app.kubernetes.io/name: model
