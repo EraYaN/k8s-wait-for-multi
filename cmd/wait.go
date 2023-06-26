@@ -44,26 +44,8 @@ var mu sync.Mutex
 var waits *pkg.Waitables
 
 func wait(cmd *cobra.Command, args []string) error {
-	isVersion, err := cmd.Flags().GetBool("version")
-
-	if err != nil {
-		return err
-	}
-
-	if isVersion {
+	if *WaitForConfigFlags.PrintVersion {
 		return printVersion(cmd, args)
-	}
-
-	noCollapseTree, err := cmd.Flags().GetBool("no-collapse")
-
-	if err != nil {
-		return err
-	}
-
-	noTree, err := cmd.Flags().GetBool("no-tree")
-
-	if err != nil {
-		return err
 	}
 
 	if len(args) < 1 {
@@ -74,7 +56,9 @@ func wait(cmd *cobra.Command, args []string) error {
 		KubernetesConfigFlags.Namespace = pointer.String("default")
 	}
 
-	waits = pkg.NewWaitables()
+	waits = pkg.NewWaitables(WaitForConfigFlags)
+
+	waits.Start()
 
 	timeout, err := cmd.Flags().GetDuration("timeout")
 
@@ -155,11 +139,7 @@ func wait(cmd *cobra.Command, args []string) error {
 		return errors.New("not enough arguments")
 	}
 
-	if noTree {
-		log.Println(waits.GetStatusString())
-	} else {
-		log.Println(waits.GetStatusTreeString(noCollapseTree))
-	}
+	waits.PrintStatus()
 
 	if waits.HasServices() {
 		svc_informer, err := cc.GetInformerForKind(timeoutCtx, schema.FromAPIVersionAndKind("v1", "Service"))
@@ -169,13 +149,13 @@ func wait(cmd *cobra.Command, args []string) error {
 
 		svc_informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventAddService, obj.(*corev1.Service), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventAddService, obj.(*corev1.Service))
 			},
 			UpdateFunc: func(obj interface{}, newObj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventUpdateService, newObj.(*corev1.Service), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventUpdateService, newObj.(*corev1.Service))
 			},
 			DeleteFunc: func(obj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventDeleteService, obj.(*corev1.Service), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventDeleteService, obj.(*corev1.Service))
 			},
 		})
 	}
@@ -188,13 +168,13 @@ func wait(cmd *cobra.Command, args []string) error {
 
 		pod_informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventAddPod, obj.(*corev1.Pod), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventAddPod, obj.(*corev1.Pod))
 			},
 			UpdateFunc: func(obj interface{}, newObj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventUpdatePod, newObj.(*corev1.Pod), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventUpdatePod, newObj.(*corev1.Pod))
 			},
 			DeleteFunc: func(obj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventDeletePod, obj.(*corev1.Pod), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventDeletePod, obj.(*corev1.Pod))
 			},
 		})
 	}
@@ -207,34 +187,32 @@ func wait(cmd *cobra.Command, args []string) error {
 
 		job_informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventAddJob, obj.(*batchv1.Job), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventAddJob, obj.(*batchv1.Job))
 			},
 			UpdateFunc: func(obj interface{}, newObj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventUpdateJob, newObj.(*batchv1.Job), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventUpdateJob, newObj.(*batchv1.Job))
 			},
 			DeleteFunc: func(obj interface{}) {
-				handleEvent(timeoutCtx, waits.ProcessEventDeleteJob, obj.(*batchv1.Job), !noCollapseTree, noTree)
+				handleEvent(timeoutCtx, waits.ProcessEventDeleteJob, obj.(*batchv1.Job))
 			},
 		})
 	}
-
-	log.Printf("Starting informers...")
 
 	err = cc.Start(timeoutCtx)
 	if err != nil {
 		return err
 	}
-	log.Printf("Shutdown informers.")
+
+	waits.Done()
 
 	return nil
 }
 
 func processCompletion() {
-	log.Printf("All items have completed or are ready")
 	cancelFn()
 }
 
-func handleEvent[V *corev1.Pod | *corev1.Service | *batchv1.Job](ctx context.Context, f func(ctx context.Context, obj V) (bool, error), obj V, collapseTree bool, noTree bool) {
+func handleEvent[V *corev1.Pod | *corev1.Service | *batchv1.Job](ctx context.Context, f func(ctx context.Context, obj V) (bool, error), obj V) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -244,11 +222,7 @@ func handleEvent[V *corev1.Pod | *corev1.Service | *batchv1.Job](ctx context.Con
 	}
 
 	if matches {
-		if noTree {
-			log.Println(waits.GetStatusString())
-		} else {
-			log.Println(waits.GetStatusTreeString(collapseTree))
-		}
+		waits.PrintStatus()
 
 		if waits.IsDone() {
 			processCompletion()

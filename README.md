@@ -23,6 +23,29 @@ For jobs it wait until the `Completed` condition is true.
 
 For services it will wait until all pods that match the service selector are Ready and Available (like above).
 
+## Example
+
+```
+$ kube-wait-for-multi default,job,some-job default,service,some-service default,pod,some-pod-88bb5f7bb-wx4f7 
+```
+Wait for the job `some-job` to complete, the service `some-service` to have all available pods and the pod `some-pod-88bb5f7bb-wx4f7` to be ready and available.
+
+The program will also wait when a service does not exist yet.
+```
+$ kube-wait-for-multi default,job,some-job default,job,test default,service,service1 default,service,service2
+Starting with namespaces: [default]
+Starting informers...
+wait status
+└── [❔]  namespace/default
+    ├── [✅]  service/service1: Available
+    ├── [❔]  service/service2: Unavailable
+    ├── [✅]  job/some-job: Complete
+    └── [❌]  job/test: NotComplete
+[... some time later ...]
+wait status
+└── [✅]  namespace/default
+```
+
 ## Docker
 
 Hosted on Docker Hub: https://hub.docker.com/r/erayan/k8s-wait-for-multi

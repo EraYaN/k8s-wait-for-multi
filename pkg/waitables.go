@@ -18,8 +18,11 @@ package pkg
 
 import (
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
+	"github.com/erayan/k8s-wait-for-multi/flags"
 	"github.com/erayan/k8s-wait-for-multi/pkg/items"
 	"github.com/erayan/k8s-wait-for-multi/utils"
 	"github.com/xlab/treeprint"
@@ -33,6 +36,14 @@ import (
 
 type Waitables struct {
 	cache.Cache
+
+	printTree          bool
+	printCollapsedTree bool
+
+	ticker         *time.Ticker
+	queuedPrints   int
+	tickerDone     chan bool
+	tickerFinished chan bool
 
 	UnprocessablePodEvents map[types.UID]Event
 
@@ -109,7 +120,19 @@ func (w *Waitables) IsDone() bool {
 	return s && p && j
 }
 
-func (w *Waitables) GetStatusString() string {
+func (w *Waitables) PrintStatus() {
+	w.queuedPrints += 1
+}
+
+func (w *Waitables) internalPrintStatus() {
+	if w.printTree {
+		log.Println(w.getStatusTreeString())
+	} else {
+		log.Println(w.getStatusString())
+	}
+}
+
+func (w *Waitables) getStatusString() string {
 	items := []string{}
 	for ns, nsitems := range w.Services {
 		for n, val := range nsitems {
@@ -135,7 +158,7 @@ func (w *Waitables) GetStatusString() string {
 	return fmt.Sprintf("Waiting for: %s", strings.Join(items, ", "))
 }
 
-func (w *Waitables) GetStatusTreeString(collapseTree bool) string {
+func (w *Waitables) getStatusTreeString() string {
 
 	tree := treeprint.NewWithRoot("wait status")
 
@@ -193,33 +216,10 @@ func (w *Waitables) GetStatusTreeString(collapseTree bool) string {
 	// if you need to iterate over the whole tree
 	// call `VisitAll` from your top root node.
 	tree.VisitAll(func(item *treeprint.Node) {
-		GetNodesStatus(item, collapseTree)
+		getNodesStatus(item, w.printCollapsedTree)
 	})
 
 	return tree.String()
-}
-
-func GetNodesStatus(item *treeprint.Node, collapseTree bool) treeprint.MetaValue {
-	if len(item.Nodes) > 0 && item.Meta == TreeStatusUnknown {
-		status := []treeprint.MetaValue{}
-
-		for _, node := range item.Nodes {
-			status = append(status, GetNodesStatus(node, collapseTree))
-		}
-		if metaInSlice(TreeStatusUnknown, status) {
-			item.Meta = TreeStatusUnknown
-		} else if metaInSlice(TreeStatusNotDone, status) {
-			item.Meta = TreeStatusNotDone
-		} else {
-			if collapseTree {
-				item.Nodes = nil
-			}
-			item.Meta = TreeStatusDone
-		}
-		// branch nodes
-	}
-
-	return item.Meta
 }
 
 func (w *Waitables) SetPodReadyFromPod(pod *corev1.Pod) {
@@ -281,16 +281,57 @@ func (w *Waitables) GetAllNamespaces() []string {
 	return namespaces
 }
 
+func (w *Waitables) Done() {
+	w.ticker.Stop()
+	w.tickerDone <- true
+	<-w.tickerFinished
+}
+
+func (w *Waitables) Start() {
+	go func() {
+		for {
+			if w.Ticker() {
+				break
+			}
+		}
+		w.tickerFinished <- true
+	}()
+}
+
+func (w *Waitables) Ticker() bool {
+	select {
+	case <-w.tickerDone:
+		w.internalPrintStatus()
+		return true
+	case <-w.ticker.C:
+		if w.queuedPrints > 0 {
+			w.queuedPrints = 0
+			w.internalPrintStatus()
+		}
+	}
+	return false
+}
+
 func (w *Waitables) WithCache(c cache.Cache) *Waitables {
 	w.Cache = c
 	return w
 }
 
-func NewWaitables() *Waitables {
-	return &Waitables{
+func NewWaitables(c *flags.ConfigFlags) *Waitables {
+	w := &Waitables{
 		UnprocessablePodEvents: map[types.UID]Event{},
 		Services:               items.NamespacedServiceCollection{},
 		Pods:                   items.NamespacedPodCollection{},
 		Jobs:                   items.NamespacedJobCollection{},
+
+		ticker:         time.NewTicker(250 * time.Millisecond),
+		queuedPrints:   0,
+		tickerDone:     make(chan bool),
+		tickerFinished: make(chan bool),
+
+		printTree:          *c.PrintTree,
+		printCollapsedTree: *c.PrintCollapsedTree,
 	}
+
+	return w
 }

@@ -34,3 +34,26 @@ func metaInSlice(a treeprint.MetaValue, list []treeprint.MetaValue) bool {
 	}
 	return false
 }
+
+func getNodesStatus(item *treeprint.Node, collapseTree bool) treeprint.MetaValue {
+	if len(item.Nodes) > 0 && item.Meta == TreeStatusUnknown {
+		status := []treeprint.MetaValue{}
+
+		for _, node := range item.Nodes {
+			status = append(status, getNodesStatus(node, collapseTree))
+		}
+		if metaInSlice(TreeStatusUnknown, status) {
+			item.Meta = TreeStatusUnknown
+		} else if metaInSlice(TreeStatusNotDone, status) {
+			item.Meta = TreeStatusNotDone
+		} else {
+			if collapseTree {
+				item.Nodes = nil
+			}
+			item.Meta = TreeStatusDone
+		}
+		// branch nodes
+	}
+
+	return item.Meta
+}

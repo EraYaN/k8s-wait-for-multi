@@ -18,7 +18,8 @@ package cmd
 
 import (
 	"os"
-	"time"
+
+	"github.com/erayan/k8s-wait-for-multi/flags"
 
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -30,6 +31,7 @@ var (
 	KubeResourceBuilderFlags *genericclioptions.ResourceBuilderFlags
 	KubernetesPrintFlags     *genericclioptions.PrintFlags
 	KubernetesGetPrintFlags  *kubectlget.PrintFlags
+	WaitForConfigFlags       *flags.ConfigFlags
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -40,7 +42,7 @@ var rootCmd = &cobra.Command{
 This is an implementation of k8s-wait-for that allows you to wait for multiple items in one process.
 This uses informers to get the status updates for all the items that this application is waiting for.
 
-You can omit the NAMESPACE and KIND, they default to the value of the --namespace flag and pod respectively. Supported string for KIND are service, job and pod.`,
+You can omit the NAMESPACE and KIND, they default to the value of the --namespace flag and 'pod' respectively. Supported strings for KIND are service, job and pod.`,
 	RunE:    wait,
 	Version: version,
 }
@@ -57,12 +59,8 @@ func init() {
 
 	KubernetesConfigFlags.AddFlags(rootCmd.PersistentFlags())
 
-	rootCmd.Flags().BoolP("version", "v", false, "Display version info")
+	WaitForConfigFlags = flags.NewConfigFlags()
 
-	rootCmd.Flags().Bool("no-collapse", false, "Do not collapse the status tree for done subtrees")
-
-	rootCmd.Flags().Bool("no-tree", false, "Do not print the status as a tree")
-
-	rootCmd.PersistentFlags().DurationP("timeout", "t", time.Duration(600*time.Second), "The length of time to wait before ending watch, zero means never. Any other values should contain a corresponding time unit (e.g. 1s, 2m, 3h). Default is 10 minutes")
+	WaitForConfigFlags.AddFlags(rootCmd.Flags())
 
 }
