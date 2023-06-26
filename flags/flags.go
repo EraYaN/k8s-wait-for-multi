@@ -29,7 +29,8 @@ type ConfigFlags struct {
 	PrintTree          *bool
 	PrintCollapsedTree *bool
 
-	Timeout *time.Duration
+	Timeout    *time.Duration
+	SyncPeriod *time.Duration
 }
 
 func NewConfigFlags() *ConfigFlags {
@@ -38,13 +39,18 @@ func NewConfigFlags() *ConfigFlags {
 		PrintTree:          utilpointer.Bool(true),
 		PrintCollapsedTree: utilpointer.Bool(true),
 
-		Timeout: utilpointer.Duration(time.Duration(600 * time.Second)),
+		Timeout:    utilpointer.Duration(time.Duration(600 * time.Second)),
+		SyncPeriod: utilpointer.Duration(time.Duration(90 * time.Second)),
 	}
 }
 
 func (f *ConfigFlags) AddFlags(flags *pflag.FlagSet) {
 	if f.Timeout != nil {
 		flags.DurationVarP(f.Timeout, "timeout", "t", *f.Timeout, "The length of time to wait before ending watch, zero means never. Any other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)")
+	}
+
+	if f.Timeout != nil {
+		flags.DurationVar(f.SyncPeriod, "sync-period", *f.SyncPeriod, "The length of time to pass to the cache to initiate a sync. (e.g. 1s, 2m, 3h)")
 	}
 
 	if f.PrintVersion != nil {

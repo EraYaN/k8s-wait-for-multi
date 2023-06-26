@@ -92,6 +92,7 @@ func wait(cmd *cobra.Command, args []string) error {
 
 	opts := cache.Options{
 		Namespaces: namespaces,
+		SyncPeriod: WaitForConfigFlags.SyncPeriod,
 	}
 
 	conf, err := KubernetesConfigFlags.ToRESTConfig()

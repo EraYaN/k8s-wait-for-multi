@@ -45,7 +45,7 @@ type Waitables struct {
 	tickerDone     chan bool
 	tickerFinished chan bool
 
-	UnprocessablePodEvents map[types.UID]Event
+	LastPodEvents map[types.UID]Event
 
 	Services items.NamespacedServiceCollection
 	Pods     items.NamespacedPodCollection
@@ -89,8 +89,12 @@ func (w *Waitables) addJob(namespace string, name string) *items.JobItem {
 	return w.Jobs[namespace][name]
 }
 
-func (w *Waitables) HasPod(meta metav1.ObjectMeta) bool {
+func (w *Waitables) HasPodDirect(meta metav1.ObjectMeta) bool {
 	return w.Pods.Contains(&meta)
+}
+
+func (w *Waitables) HasPod(meta metav1.ObjectMeta) bool {
+	return w.HasPodDirect(meta) || w.Services.ContainsPod(&meta)
 }
 
 func (w *Waitables) HasService(meta metav1.ObjectMeta) bool {
@@ -319,10 +323,10 @@ func (w *Waitables) WithCache(c cache.Cache) *Waitables {
 
 func NewWaitables(c *flags.ConfigFlags) *Waitables {
 	w := &Waitables{
-		UnprocessablePodEvents: map[types.UID]Event{},
-		Services:               items.NamespacedServiceCollection{},
-		Pods:                   items.NamespacedPodCollection{},
-		Jobs:                   items.NamespacedJobCollection{},
+		LastPodEvents: map[types.UID]Event{},
+		Services:      items.NamespacedServiceCollection{},
+		Pods:          items.NamespacedPodCollection{},
+		Jobs:          items.NamespacedJobCollection{},
 
 		ticker:         time.NewTicker(250 * time.Millisecond),
 		queuedPrints:   0,

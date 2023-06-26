@@ -68,9 +68,9 @@ func (w *Waitables) ProcessEventDeleteService(ctx context.Context, svc *corev1.S
 }
 
 func (w *Waitables) ProcessOldPodEvents(ctx context.Context, pod *corev1.Pod) (bool, error) {
-	if val, ok := w.UnprocessablePodEvents[pod.UID]; ok {
-		//log.Printf("Running UnprocessablePodEvents for %s/%s of type %v", pod.Namespace, pod.Name, val.EventType)
-		//defer delete(w.UnprocessablePodEvents, pod.UID)
+	if val, ok := w.LastPodEvents[pod.UID]; ok {
+		//log.Printf("Running LastPodEvents for %s/%s of type %v", pod.Namespace, pod.Name, val.EventType)
+		//defer delete(w.LastPodEvents, pod.UID)
 		if val.EventType == EventTypeAdd {
 			return w.ProcessEventAddPod(ctx, pod)
 		} else if val.EventType == EventTypeUpdate {
@@ -83,54 +83,64 @@ func (w *Waitables) ProcessOldPodEvents(ctx context.Context, pod *corev1.Pod) (b
 }
 
 func (w *Waitables) ProcessEventAddPod(ctx context.Context, pod *corev1.Pod) (bool, error) {
-	processed := false
-	if w.HasPod(pod.ObjectMeta) {
-		//log.Printf("Add %T %s %s", pod, pod.Namespace, pod.Name)
+	// if w.HasPod(pod.ObjectMeta) {
+	// 	log.Printf("Add %T %s %s", pod, pod.Namespace, pod.Name)
+	// }
+
+	if w.HasPodDirect(pod.ObjectMeta) {
 		w.SetPodReadyFromPod(pod)
-		processed = true
 	}
+
 	if podItems, ok := w.Services.GetPods(pod); ok {
 		for _, podItem := range podItems {
 			podItem.WithReadyFromPod(pod)
 		}
-		processed = true
 	}
-	if processed {
-		return true, nil
-	} else {
-		w.UnprocessablePodEvents[pod.UID] = Event{EventType: EventTypeAdd, Pod: pod}
-	}
-	return false, nil
+
+	w.LastPodEvents[pod.UID] = Event{EventType: EventTypeAdd, Pod: pod}
+
+	return w.HasPod(pod.ObjectMeta), nil
 }
 
 func (w *Waitables) ProcessEventUpdatePod(ctx context.Context, pod *corev1.Pod) (bool, error) {
-	if w.HasPod(pod.ObjectMeta) {
-		//log.Printf("Update %T %s %s", pod, pod.Namespace, pod.Name)
+	// if w.HasPod(pod.ObjectMeta) {
+	// 	log.Printf("Update %T %s %s", pod, pod.Namespace, pod.Name)
+	// }
+
+	if w.HasPodDirect(pod.ObjectMeta) {
 		w.SetPodReadyFromPod(pod)
-		return true, nil
-	} else if podItems, ok := w.Services.GetPods(pod); ok {
+	}
+
+	if podItems, ok := w.Services.GetPods(pod); ok {
 		for _, podItem := range podItems {
 			podItem.WithReadyFromPod(pod)
 		}
-	} else {
-		w.UnprocessablePodEvents[pod.UID] = Event{EventType: EventTypeUpdate, Pod: pod}
 	}
-	return false, nil
+
+	w.LastPodEvents[pod.UID] = Event{EventType: EventTypeUpdate, Pod: pod}
+
+	return w.HasPod(pod.ObjectMeta), nil
 }
 
 func (w *Waitables) ProcessEventDeletePod(ctx context.Context, pod *corev1.Pod) (bool, error) {
-	if w.HasPod(pod.ObjectMeta) {
-		//log.Printf("Delete %T %s %s", pod, pod.Namespace, pod.Name)
+	// if w.HasPod(pod.ObjectMeta) {
+	// 	log.Printf("Delete %T %s %s", pod, pod.Namespace, pod.Name)
+	// }
+
+	if w.HasPodDirect(pod.ObjectMeta) {
 		w.UnsetPodReady(pod)
-		return true, nil
-	} else if podItems, ok := w.Services.GetPods(pod); ok {
+	}
+
+	if podItems, ok := w.Services.GetPods(pod); ok {
 		for _, podItem := range podItems {
 			podItem.WithReady(false)
 		}
-	} else {
-		w.UnprocessablePodEvents[pod.UID] = Event{EventType: EventTypeDelete, Pod: pod}
+		w.Services.DeletePod(&pod.ObjectMeta)
 	}
-	return false, nil
+
+	w.LastPodEvents[pod.UID] = Event{EventType: EventTypeDelete, Pod: pod}
+
+	return w.HasPod(pod.ObjectMeta), nil
 }
 
 func (w *Waitables) ProcessEventAddJob(ctx context.Context, job *batchv1.Job) (bool, error) {

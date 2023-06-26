@@ -17,11 +17,11 @@ It accepts arguments in the following formats:
 - `pod,pod-name` using the namespace from the `--namespace`, `-n` flag or `default`
 - `pod-name` using the namespace from the `--namespace`, `-n` flag or `default` and the kind `pod` 
 
-For pods it waits until the pod is Ready (`k8s.io/kubectl/pkg/util/podutils.IsPodReady`) and Available (`k8s.io/kubectl/pkg/util/podutils.IsPodAvailable`).
+For pods it waits until the pod is Ready (`k8s.io/kubectl/pkg/util/podutils.IsPodReady`).
 
 For jobs it wait until the `Completed` condition is true.
 
-For services it will wait until all pods that match the service selector are Ready and Available (like above).
+For services it will wait until all pods that match the service selector are Ready (like above).
 
 ## Example
 

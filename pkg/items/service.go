@@ -72,6 +72,26 @@ func (i *ServiceItem) GetPod(pod ItemInterface) (*PodItem, bool) {
 	return val, ok
 }
 
+func (c ServiceItem) DeletePod(i ItemInterface) {
+	if c.namespace == i.GetNamespace() {
+		delete(c.children, i.GetName())
+	}
+}
+
+func (c ServiceCollection) DeletePod(i ItemInterface) {
+	for _, svc := range c {
+		svc.DeletePod(i)
+	}
+}
+
+func (c NamespacedServiceCollection) DeletePod(i ItemInterface) {
+	for ns, nssvcs := range c {
+		if ns == i.GetNamespace() {
+			nssvcs.DeletePod(i)
+		}
+	}
+}
+
 func (c NamespacedServiceCollection) EnsureNamespace(ns string) {
 	if _, ok := c[ns]; !ok {
 		c[ns] = ServiceCollection{}
@@ -81,6 +101,17 @@ func (c NamespacedServiceCollection) EnsureNamespace(ns string) {
 func (c NamespacedServiceCollection) Contains(i ItemInterface) bool {
 	_, ok := c[i.GetNamespace()][i.GetName()]
 	return ok
+}
+
+func (c NamespacedServiceCollection) ContainsPod(i ItemInterface) bool {
+	for _, items := range c {
+		for _, item := range items {
+			if item.children.Contains(i) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (c NamespacedServiceCollection) GetPods(i ItemInterface) ([]*PodItem, bool) {

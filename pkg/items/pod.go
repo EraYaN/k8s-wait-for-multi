@@ -20,7 +20,6 @@ import (
 	"k8s.io/kubectl/pkg/util/podutils"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type NamespacedPodCollection map[string]PodCollection
@@ -47,7 +46,7 @@ func (i *PodItem) WithReady(ready bool) *PodItem {
 }
 
 func (i *PodItem) WithReadyFromPod(pod *corev1.Pod) *PodItem {
-	i.ready = podutils.IsPodReady(pod) && podutils.IsPodAvailable(pod, 2, metav1.Now())
+	i.ready = podutils.IsPodReady(pod)
 	return i
 }
 
