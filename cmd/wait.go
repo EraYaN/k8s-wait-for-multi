@@ -24,6 +24,7 @@ import (
 	"sync"
 
 	"github.com/erayan/k8s-wait-for-multi/pkg"
+	"github.com/erayan/k8s-wait-for-multi/utils"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
@@ -84,8 +85,29 @@ func wait(cmd *cobra.Command, args []string) error {
 	timeoutCtx, cancelFn = context.WithTimeout(context.Background(), timeout)
 	defer cancelFn()
 
+	namespaces := []string{}
+
+	for _, arg := range args {
+		arg_items := strings.Split(arg, ",")
+		len := len(arg_items)
+		err = nil
+		if len == 1 || len == 2 {
+			if !utils.StringInSlice(*KubernetesConfigFlags.Namespace, namespaces) {
+				namespaces = append(namespaces, *KubernetesConfigFlags.Namespace)
+			}
+		} else if len == 3 {
+			if !utils.StringInSlice(arg_items[0], namespaces) {
+				namespaces = append(namespaces, arg_items[0])
+			}
+		} else {
+			log.Printf("illegal argument '%s'", arg)
+		}
+	}
+
+	log.Printf("Starting with namespaces: %v", namespaces)
+
 	opts := cache.Options{
-		Namespaces: waits.GetAllNamespaces(),
+		Namespaces: namespaces,
 	}
 
 	conf, err := KubernetesConfigFlags.ToRESTConfig()

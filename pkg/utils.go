@@ -26,15 +26,6 @@ const (
 
 type TreeStatus string
 
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 func metaInSlice(a treeprint.MetaValue, list []treeprint.MetaValue) bool {
 	for _, b := range list {
 		if b == a {

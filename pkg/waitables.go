@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/erayan/k8s-wait-for-multi/pkg/items"
+	"github.com/erayan/k8s-wait-for-multi/utils"
 	"github.com/xlab/treeprint"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -261,18 +262,18 @@ func (w *Waitables) GetAllNamespaces() []string {
 	namespaces := []string{}
 
 	for ns := range w.Services {
-		if !stringInSlice(ns, namespaces) {
+		if !utils.StringInSlice(ns, namespaces) {
 			namespaces = append(namespaces, ns)
 		}
 	}
 
 	for ns := range w.Jobs {
-		if !stringInSlice(ns, namespaces) {
+		if !utils.StringInSlice(ns, namespaces) {
 			namespaces = append(namespaces, ns)
 		}
 	}
 	for ns := range w.Pods {
-		if !stringInSlice(ns, namespaces) {
+		if !utils.StringInSlice(ns, namespaces) {
 			namespaces = append(namespaces, ns)
 		}
 	}

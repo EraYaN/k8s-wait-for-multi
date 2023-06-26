@@ -10,7 +10,10 @@
             "request": "launch",
             "mode": "debug",
             "program": "./main.go",
-            "args": ["wait-multi", "service,model", "service,model2", "model-6fd69c9d97-hrxt5"]
+            "args": [
+                "--kubeconfig=kubeconfig.txt",                
+                "default,service,model",
+            ]
         }
-    }
+    ]    
 }
