@@ -24,13 +24,14 @@ import (
 
 	"github.com/erayan/k8s-wait-for-multi/flags"
 	"github.com/erayan/k8s-wait-for-multi/pkg/items"
-	"github.com/erayan/k8s-wait-for-multi/utils"
+
 	"github.com/xlab/treeprint"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 )
 
@@ -266,18 +267,18 @@ func (w *Waitables) GetAllNamespaces() []string {
 	namespaces := []string{}
 
 	for ns := range w.Services {
-		if !utils.StringInSlice(ns, namespaces) {
+		if !slices.Contains(namespaces, ns) {
 			namespaces = append(namespaces, ns)
 		}
 	}
 
 	for ns := range w.Jobs {
-		if !utils.StringInSlice(ns, namespaces) {
+		if !slices.Contains(namespaces, ns) {
 			namespaces = append(namespaces, ns)
 		}
 	}
 	for ns := range w.Pods {
-		if !utils.StringInSlice(ns, namespaces) {
+		if !slices.Contains(namespaces, ns) {
 			namespaces = append(namespaces, ns)
 		}
 	}

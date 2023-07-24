@@ -24,8 +24,8 @@ import (
 	"sync"
 
 	"github.com/erayan/k8s-wait-for-multi/pkg"
-	"github.com/erayan/k8s-wait-for-multi/utils"
 	"github.com/spf13/cobra"
+	"k8s.io/utils/strings/slices"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	toolscache "k8s.io/client-go/tools/cache"
@@ -76,11 +76,11 @@ func wait(cmd *cobra.Command, args []string) error {
 		len := len(arg_items)
 		err = nil
 		if len == 1 || len == 2 {
-			if !utils.StringInSlice(*KubernetesConfigFlags.Namespace, namespaces) {
+			if !slices.Contains(namespaces, *KubernetesConfigFlags.Namespace) {
 				namespaces = append(namespaces, *KubernetesConfigFlags.Namespace)
 			}
 		} else if len == 3 {
-			if !utils.StringInSlice(arg_items[0], namespaces) {
+			if !slices.Contains(namespaces, arg_items[0]) {
 				namespaces = append(namespaces, arg_items[0])
 			}
 		} else {
