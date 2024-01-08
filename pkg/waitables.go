@@ -178,7 +178,8 @@ func (w *Waitables) getStatusTreeString() string {
 		branch := namespace_branches[ns]
 		for n, val := range nsitems {
 			status := "Unavailable"
-			if (!w.onlyOnePerServiceRequired && val.IsAvailable()) || (w.onlyOnePerServiceRequired && val.IsAtLeastOneAvailable()) {
+			svcIsAvailable := (!w.onlyOnePerServiceRequired && val.IsAvailable()) || (w.onlyOnePerServiceRequired && val.IsAtLeastOneAvailable())
+			if svcIsAvailable {
 				status = "Available"
 			}
 			svc_branch := branch.AddMetaBranch(TreeStatusUnknown, fmt.Sprintf("service/%s: %s", n, status))
@@ -189,7 +190,7 @@ func (w *Waitables) getStatusTreeString() string {
 				if pod.IsReady() {
 					status = "Ready"
 					meta = TreeStatusDone
-				} else if w.onlyOnePerServiceRequired {
+				} else if w.onlyOnePerServiceRequired && svcIsAvailable {
 					status = "Ignored"
 					meta = TreeStatusIgnored
 				}
