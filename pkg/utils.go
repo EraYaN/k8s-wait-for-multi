@@ -20,6 +20,7 @@ import "github.com/xlab/treeprint"
 
 const (
 	TreeStatusDone    = "✅"
+	TreeStatusIgnored = "☑️"
 	TreeStatusNotDone = "❌"
 	TreeStatusUnknown = "❔"
 )
