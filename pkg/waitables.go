@@ -38,8 +38,9 @@ import (
 type Waitables struct {
 	cache.Cache
 
-	printTree          bool
-	printCollapsedTree bool
+	onlyOnePerServiceRequired bool
+	printTree                 bool
+	printCollapsedTree        bool
 
 	ticker         *time.Ticker
 	queuedPrints   int
@@ -119,7 +120,7 @@ func (w *Waitables) HasJobs() bool {
 }
 
 func (w *Waitables) IsDone() bool {
-	s := w.Services.AreAllAvailable()
+	s := w.Services.AreAllAvailable(w.onlyOnePerServiceRequired)
 	p := w.Pods.AreAllReady()
 	j := w.Jobs.AreAllComplete()
 	return s && p && j
@@ -334,8 +335,9 @@ func NewWaitables(c *flags.ConfigFlags) *Waitables {
 		tickerDone:     make(chan bool),
 		tickerFinished: make(chan bool),
 
-		printTree:          *c.PrintTree,
-		printCollapsedTree: *c.PrintCollapsedTree,
+		printTree:                 *c.PrintTree,
+		printCollapsedTree:        *c.PrintCollapsedTree,
+		onlyOnePerServiceRequired: *c.OnlyOnePerServiceRequired,
 	}
 
 	return w

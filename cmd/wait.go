@@ -90,9 +90,15 @@ func wait(cmd *cobra.Command, args []string) error {
 
 	log.Printf("Starting with namespaces: %v", namespaces)
 
+	nsConfigs := map[string]cache.Config{}
+
+	for _, ns := range namespaces {
+		nsConfigs[ns] = cache.Config{}
+	}
+
 	opts := cache.Options{
-		Namespaces: namespaces,
-		SyncPeriod: WaitForConfigFlags.SyncPeriod,
+		DefaultNamespaces: nsConfigs,
+		SyncPeriod:        WaitForConfigFlags.SyncPeriod,
 	}
 
 	conf, err := KubernetesConfigFlags.ToRESTConfig()

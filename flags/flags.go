@@ -25,9 +25,10 @@ import (
 )
 
 type ConfigFlags struct {
-	PrintVersion       *bool
-	PrintTree          *bool
-	PrintCollapsedTree *bool
+	PrintVersion              *bool
+	PrintTree                 *bool
+	PrintCollapsedTree        *bool
+	OnlyOnePerServiceRequired *bool
 
 	Timeout    *time.Duration
 	SyncPeriod *time.Duration
@@ -35,9 +36,10 @@ type ConfigFlags struct {
 
 func NewConfigFlags() *ConfigFlags {
 	return &ConfigFlags{
-		PrintVersion:       utilpointer.Bool(false),
-		PrintTree:          utilpointer.Bool(true),
-		PrintCollapsedTree: utilpointer.Bool(true),
+		PrintVersion:              utilpointer.Bool(false),
+		PrintTree:                 utilpointer.Bool(true),
+		PrintCollapsedTree:        utilpointer.Bool(true),
+		OnlyOnePerServiceRequired: utilpointer.Bool(false),
 
 		Timeout:    utilpointer.Duration(time.Duration(600 * time.Second)),
 		SyncPeriod: utilpointer.Duration(time.Duration(90 * time.Second)),
@@ -49,8 +51,12 @@ func (f *ConfigFlags) AddFlags(flags *pflag.FlagSet) {
 		flags.DurationVarP(f.Timeout, "timeout", "t", *f.Timeout, "The length of time to wait before ending watch, zero means never. Any other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)")
 	}
 
-	if f.Timeout != nil {
+	if f.SyncPeriod != nil {
 		flags.DurationVar(f.SyncPeriod, "sync-period", *f.SyncPeriod, "The length of time to pass to the cache to initiate a sync. (e.g. 1s, 2m, 3h)")
+	}
+
+	if f.OnlyOnePerServiceRequired != nil {
+		flags.BoolVar(f.OnlyOnePerServiceRequired, "only-one-per-service-required", *f.OnlyOnePerServiceRequired, "When true a service is ready when at least one pod is ready. When false all pods must be ready.")
 	}
 
 	if f.PrintVersion != nil {

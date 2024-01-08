@@ -56,6 +56,19 @@ func (i *ServiceItem) IsAvailable() bool {
 	return true
 }
 
+func (i *ServiceItem) IsAtLeastOneAvailable() bool {
+	if i.children == nil || len(i.children) == 0 {
+		return false
+	}
+
+	for _, item := range i.children {
+		if item.ready {
+			return true
+		}
+	}
+	return false
+}
+
 func (i *ServiceItem) GetName() string {
 	return i.name
 }
@@ -142,11 +155,17 @@ func (c NamespacedServiceCollection) TotalCount() int {
 	return count
 }
 
-func (c NamespacedServiceCollection) AreAllAvailable() bool {
-	for _, items := range c {
-		for _, item := range items {
-			if !item.IsAvailable() {
-				return false
+func (c NamespacedServiceCollection) AreAllAvailable(onlyOnePerServiceRequired bool) bool {
+	for _, services := range c {
+		for _, service := range services {
+			if onlyOnePerServiceRequired {
+				if !service.IsAtLeastOneAvailable() {
+					return false
+				}
+			} else {
+				if !service.IsAvailable() {
+					return false
+				}
 			}
 		}
 	}
