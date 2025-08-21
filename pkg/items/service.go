@@ -21,16 +21,18 @@ type NamespacedServiceCollection map[string]ServiceCollection
 type ServiceCollection map[string]*ServiceItem
 
 type ServiceItem struct {
-	namespace string
-	name      string
-	children  PodCollection
+	namespace  string
+	name       string
+	children   PodCollection
+	isExternal bool
 }
 
 func Service(ns string, n string) *ServiceItem {
 	return &ServiceItem{
-		namespace: ns,
-		name:      n,
-		children:  nil,
+		namespace:  ns,
+		name:       n,
+		children:   nil,
+		isExternal: false,
 	}
 }
 
@@ -43,8 +45,24 @@ func (i *ServiceItem) WithChildren(children PodCollection) *ServiceItem {
 	return i
 }
 
+func (i *ServiceItem) WithExternal(isExternal bool) *ServiceItem {
+	i.isExternal = isExternal
+	if i.isExternal {
+		i.children = nil
+	}
+	return i
+}
+
+func (i *ServiceItem) IsExternal() bool {
+	return i.isExternal
+}
+
 func (i *ServiceItem) IsAvailable() bool {
-	if i.children == nil || len(i.children) == 0 {
+	if i.isExternal {
+		return true
+	}
+
+	if len(i.children) == 0 {
 		return false
 	}
 
@@ -57,7 +75,11 @@ func (i *ServiceItem) IsAvailable() bool {
 }
 
 func (i *ServiceItem) IsAtLeastOneAvailable() bool {
-	if i.children == nil || len(i.children) == 0 {
+	if i.isExternal {
+		return true
+	}
+
+	if len(i.children) == 0 {
 		return false
 	}
 

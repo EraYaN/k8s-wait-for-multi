@@ -21,7 +21,8 @@ For pods it waits until the pod is Ready (`k8s.io/kubectl/pkg/util/podutils.IsPo
 
 For jobs it wait until the `Completed` condition is true.
 
-For services it will wait until all pods that match the service selector are Ready (like above).
+For services it will wait until all pods that match the service selector are Ready (like above). 
+If it is an `ExternalName` service it is always assumed to be ready.
 
 ## Example
 

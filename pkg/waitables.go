@@ -55,13 +55,14 @@ type Waitables struct {
 }
 
 func (w *Waitables) AddItem(kind string, namespace string, name string) error {
-	if kind == "pod" {
+	switch kind {
+	case "pod":
 		w.addPod(namespace, name)
-	} else if kind == "job" {
+	case "job":
 		w.addJob(namespace, name)
-	} else if kind == "service" {
+	case "service":
 		w.addService(namespace, name)
-	} else {
+	default:
 		return fmt.Errorf("unsupported kind '%s'", kind)
 	}
 	return nil
@@ -180,21 +181,31 @@ func (w *Waitables) getStatusTreeString() string {
 			status := "Unavailable"
 			svcIsAvailable := (!w.onlyOnePerServiceRequired && val.IsAvailable()) || (w.onlyOnePerServiceRequired && val.IsAtLeastOneAvailable())
 			if svcIsAvailable {
-				status = "Available"
-			}
-			svc_branch := branch.AddMetaBranch(TreeStatusUnknown, fmt.Sprintf("service/%s: %s", n, status))
-
-			for podname, pod := range *val.GetChildren() {
-				status := "NotReady"
-				meta := TreeStatusNotDone
-				if pod.IsReady() {
-					status = "Ready"
-					meta = TreeStatusDone
-				} else if w.onlyOnePerServiceRequired && svcIsAvailable {
-					status = "Ignored"
-					meta = TreeStatusIgnored
+				if val.IsExternal() {
+					status = "External"
+				} else {
+					status = "Available"
 				}
-				svc_branch.AddMetaNode(meta, fmt.Sprintf("pod/%s: %s", podname, status))
+			}
+			var svc_branch treeprint.Tree
+
+			if val.IsExternal() {
+				svc_branch = branch.AddMetaBranch(TreeStatusDone, fmt.Sprintf("service/%s: %s", n, status))
+			} else {
+				svc_branch = branch.AddMetaBranch(TreeStatusUnknown, fmt.Sprintf("service/%s: %s", n, status))
+
+				for podname, pod := range *val.GetChildren() {
+					status := "NotReady"
+					meta := TreeStatusNotDone
+					if pod.IsReady() {
+						status = "Ready"
+						meta = TreeStatusDone
+					} else if w.onlyOnePerServiceRequired && svcIsAvailable {
+						status = "Ignored"
+						meta = TreeStatusIgnored
+					}
+					svc_branch.AddMetaNode(meta, fmt.Sprintf("pod/%s: %s", podname, status))
+				}
 			}
 		}
 	}
@@ -262,6 +273,10 @@ func (w *Waitables) SetServiceChildren(meta *metav1.ObjectMeta, pods []corev1.Po
 		podItems[pod.Name] = items.Pod(pod.Namespace, pod.Name).WithReadyFromPod(&pod)
 	}
 	w.Services[meta.Namespace][meta.Name].WithChildren(podItems)
+}
+
+func (w *Waitables) SetServiceExternality(meta *metav1.ObjectMeta, isExternal bool) {
+	w.Services[meta.Namespace][meta.Name].WithExternal(isExternal)
 }
 
 func (w *Waitables) TotalCount() int {

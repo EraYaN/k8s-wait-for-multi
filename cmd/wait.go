@@ -235,5 +235,4 @@ func handleEvent[V *corev1.Pod | *corev1.Service | *batchv1.Job](ctx context.Con
 			processCompletion()
 		}
 	}
-
 }

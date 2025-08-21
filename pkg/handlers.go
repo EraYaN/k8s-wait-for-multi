@@ -37,6 +37,7 @@ func (w *Waitables) ProcessEventAddService(ctx context.Context, svc *corev1.Serv
 		}
 
 		w.SetServiceChildren(&svc.ObjectMeta, pods.Items)
+		w.SetServiceExternality(&svc.ObjectMeta, svc.Spec.Type == corev1.ServiceTypeExternalName)
 		return true, nil
 	}
 	return false, nil
@@ -52,6 +53,7 @@ func (w *Waitables) ProcessEventUpdateService(ctx context.Context, svc *corev1.S
 		}
 
 		w.SetServiceChildren(&svc.ObjectMeta, pods.Items)
+		w.SetServiceExternality(&svc.ObjectMeta, svc.Spec.Type == corev1.ServiceTypeExternalName)
 		return true, nil
 	}
 	return false, nil
@@ -62,6 +64,7 @@ func (w *Waitables) ProcessEventDeleteService(ctx context.Context, svc *corev1.S
 		//log.Printf("Delete %T %s %s", svc, svc.Namespace, svc.Name)
 
 		w.SetServiceChildren(&svc.ObjectMeta, nil)
+		w.SetServiceExternality(&svc.ObjectMeta, svc.Spec.Type == corev1.ServiceTypeExternalName)
 		return true, nil
 	}
 	return false, nil
@@ -71,11 +74,12 @@ func (w *Waitables) ProcessOldPodEvents(ctx context.Context, pod *corev1.Pod) (b
 	if val, ok := w.LastPodEvents[pod.UID]; ok {
 		//log.Printf("Running LastPodEvents for %s/%s of type %v", pod.Namespace, pod.Name, val.EventType)
 		//defer delete(w.LastPodEvents, pod.UID)
-		if val.EventType == EventTypeAdd {
+		switch val.EventType {
+		case EventTypeAdd:
 			return w.ProcessEventAddPod(ctx, pod)
-		} else if val.EventType == EventTypeUpdate {
+		case EventTypeUpdate:
 			return w.ProcessEventUpdatePod(ctx, pod)
-		} else if val.EventType == EventTypeDelete {
+		case EventTypeDelete:
 			return w.ProcessEventDeletePod(ctx, pod)
 		}
 	}
